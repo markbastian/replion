@@ -2,7 +2,7 @@
   (:require [datomic.client.api :as d]
             [nrepl.server :refer [start-server]]))
 
-(defonce server (start-server :bind "0.0.0.0" :port 3001))
+;(defonce server (start-server :bind "0.0.0.0" :port 3001))
 
 ;Note that your region may be different and your system name will surely be different.
 (def config
