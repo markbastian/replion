@@ -6,4 +6,7 @@
              ;Add embedded repl support
              nrepl                    {:mvn/version "0.6.0"}
              }
- :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
+ :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}
+ :aliases   {:ion-dev {:deps      {com.datomic/ion-dev {:mvn/version "0.9.247"}}
+                       :main-opts ["-m" "datomic.ion.dev"]}}
+ }
