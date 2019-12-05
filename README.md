@@ -51,7 +51,6 @@ You are now ready to connect to your system's REPL server. Do the following:
 
 ### Make the REPL connection
 
-
 ## Suggestions for the Datomic Team
  * Add a startup/init ns or hook along the lines of integrant init. This would enable control of stateful items such as connections as well as provide a more solid mount point for starting the nrepl server and so on.
 
