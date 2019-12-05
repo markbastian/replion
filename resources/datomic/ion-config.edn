@@ -1,2 +1,4 @@
-{:lambdas {}
+{:lambdas {:get-schema
+           {:fn replion.lambdas/hello
+            :description "Hello world."}}
  :app-name "repl-ion"}

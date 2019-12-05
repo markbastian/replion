@@ -18,9 +18,11 @@ While not required, I strongly recommend understanding the basics of Datomic Clo
 If you are already familiar with Datomic Cloud and Ions, feel free to move on to the next section.
 
 ## Enabling the REPL
+The next sections will describe changes needed to your system to enable REPL connectivity.
+
+Prior to any of the following steps, set up a Datomic Solo instance _exactly_ as described [here](https://docs.datomic.com/cloud/setting-up.html). This includes setting up the bastion for SSH access as described [here](https://docs.datomic.com/cloud/getting-started/configure-access.html#authorize-gateway).
 
 ### System Modifications
-1. Set up a Datomic Solo instance _exactly_ as described [here](https://docs.datomic.com/cloud/setting-up.html). This includes setting up the bastion for SSH access as described [here](https://docs.datomic.com/cloud/getting-started/configure-access.html#authorize-gateway).
 1. Once you create your system, go to the [EC2 console](https://console.aws.amazon.com/ec2/v2/home?#Instances:sort=desc:instanceId) and view your system instances.
 1. Select the _compute_ instance from the instance list (e.g. replion) and then in the window below click on the security group link.
 1. Add 3 entries to the security group's inbound rules that are the same as the existing 3 rules except you want to set the port range to your REPL port. For example, if I were to use port 3001 for my REPL, I'd enter 3001 for the port range. My dialog is shown below.
@@ -37,9 +39,17 @@ You now need to modify your code to host an nrepl server.
 1. For reference, here is where I make these changes in this project and when I modified the Datomic/ion-starter project:
    1. In this project, I put these changes in the `replion.core` ns.
    1. If you are modifying the ion-starter project, I'd put the server definition right [here](https://github.com/Datomic/ion-starter/blob/master/src/datomic/ion/starter.clj#L11) and the requires in the usual place.
+1. Complete a push/deploy cycle to get your changes into your Datomic system.
 
-### Make the Connection
-ssh -i ~/.ssh/$(yourkey).pem -L 3001:$(repl-ion-private-ip):3001 ec2-user@$(public dns)
+### Set up SSH tunnel through your bastion
+You are now ready to connect to your system's REPL server. Do the following:
+1. From the EC2 instances panel, select your bastion (e.g. replion-bastion). Click the connect button. It will provide an example ssh connection string. Copy this down. It will be something along the lines of `ssh -i "keyname.pem" root@public-dns.compute-1.amazonaws.com`.
+1. Select your compute instance (e.g. replion) and note its private ip as listed in the Description tab below the instance list. 
+1. Using the above two items, construct a connection command like so: `ssh -i ~/.ssh/$(yourkey).pem -L 3001:$(replion-private-ip):3001 ec2-user@$(public dns)`. The params `yourkey` and `public dns` will be from the first bullet and `replion-private-ip` will be from the second.
+1. Execute this command in your project's terminal.
+
+### Make the REPL connection
+
 
 ## License
 

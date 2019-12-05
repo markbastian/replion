@@ -12,4 +12,4 @@
    :endpoint    "http://entry.repl-ion.us-east-1.datomic.net:8182/"
    :proxy-port  8182})
 
-(def client (d/client config))
+(defonce client (d/client config))

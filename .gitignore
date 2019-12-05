@@ -14,3 +14,4 @@ pom.xml.asc
 *.iml
 connect
 /.cpcache
+/.datomic-ions
