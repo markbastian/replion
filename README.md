@@ -285,13 +285,42 @@ Finally, let's try a few invocations:
 
 These return `{"kid": "Sat Jan 01 00:00:00 UTC 2000"}`, `{"bitten": "Mon Jan 01 00:00:00 UTC 2001"}`, and `{"spider-man": "Fri Jan 05 00:00:00 UTC 2001"}`, respectively. Awesome, it works!
 
-At this point everything looks right, so it might a be a good time for a "slow deploy." However, since I am doing this, it is also an opportune time to add some dependencies to make working with json a little less painful. I'll now add `cheshire {:mvn/version "5.9.0"}` to my deps.edn files :deps map and do a slow deploy. Note that I add the dependency (1 in this case, but it could be any number) _before_ requiring or using any of them in my project. The reason for this is that each slow deploy should have minimal deltas so that when things go wrong it is easier to diagnose the issue.
+At this point everything looks right, so it might a be a good time for a "slow deploy." However, since I am slow deploying already, this is also an opportune time to add some dependencies to make working with json a little less painful. I'll now add `cheshire {:mvn/version "5.9.0"}` to my deps.edn files :deps map and then slow deploy. Note that I add the dependency (1 in this case, but it could be any number) _before_ requiring or using any of them in my project (no code changes - just deps). The reason for this is that each slow deploy should have minimal deltas so that when things go wrong it is easier to diagnose the issue. I've run into issues in which a require was added to code and the deploy failed due to versioning issues related to the Jackson libraries (surprise!). By including but not using the library I was able to manually require libraries one-by-one in the REPL to diagnose the failure mode rather than having the deploy simply fail. This prevents painful log spelunking and other painful debugging processes.
 
-;Make this final
-This concludes our example of interactive Datomic lambda development. I was able to stub out, debug, and develop a lambda interactively. At every new attempt to understand what's going on I was able to do immediate tries and get immediate feedback as opposed to minutes-long deployments at every single code change otherwise.
+Now that my slow deploy succeeded, I am going to make a final modification to the `parker-status` function after adding `[cheshire.core :as ch]` to my requires:
 
-;Remove
-One thing I did not do was leverage the good JSON apis out there for parsing and formatting input and output. This would require changing my deps.edn file to include a JSON library such as Clojure core json or Cheshire and then doing a slow deploy. In reality I would definitely do this and I will be doing it in my next example.
+``` 
+(defn parker-status
+  [{:keys [input]}]
+  (let [date (.parse (SimpleDateFormat. "yyyy-MM-dd") (ch/parse-string input))
+        db (d/db (core/connection))
+        as-of-db (d/as-of db date)
+        [status as-of-date] (first (spiderman/parker-status-query as-of-db))]
+    (ch/encode
+      {status as-of-date})))
+```
+
+To test this in the REPL I execute this form `(def input "\"2010-01-01\"")` and then place my cursor in the penultimate position in my parker-status function and evaluate the let form, as follows:
+
+```
+(let [date (.parse (SimpleDateFormat. "yyyy-MM-dd") (ch/parse-string input))
+        db (d/db (core/connection))
+        as-of-db (d/as-of db date)
+        [status as-of-date] (first (spiderman/parker-status-query as-of-db))]
+    (ch/encode
+      {status as-of-date}))
+=> "{\"spider-man\":\"2001-01-05T00:00:00Z\"}"
+```
+
+Looks good! Let's evaluate the ns then try it with our aws command line:
+
+`aws lambda invoke --function-name repl-ion-Compute-YOURGROUPNAME-parker-status  --payload '"2006-01-01"' /dev/stdout`
+
+Result: `{"spider-man":"2001-01-05T00:00:00Z"}`
+
+Huzzah!!!
+
+This concludes our example of interactive Datomic lambda development. I was able to stub out, debug, and develop a lambda interactively. At every new attempt to understand what's going on I was able to do immediate tries and get immediate feedback as opposed to minutes-long deployments at every single code change otherwise. The only slow loop deploys were when I seeded a feature (e.g. create a new lambda), added a library (changed the deps.edn file), or decided to slow deploy a completed feature. Everything else was immediate and interactive.
 
 ## Interactive REST API Development
 For our final example I'll show.
