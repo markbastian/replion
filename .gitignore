@@ -16,3 +16,4 @@ connect
 /.cpcache
 /.datomic-ions
 hello-lambda
+parker-status-lambda

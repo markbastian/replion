@@ -133,6 +133,68 @@ Now that we've done all this, I would suggest the following workflow for maximum
  
 As needed, whenever your dependencies change (e.g. you need to add another library) you will also need to do a slow deploy. Tip: Add the dependencies first without doing any coding with them, then add your logic at the REPL. I've encountered conflicts with jar versions when doing a deploy with code changes and these are difficult to debug. Instead, minimize the changes to the deployment cycle by first pushing the deps changes, making the code changes (in the REPL, so it works), and then pushing the code changes.
 
+## Interactive Datomic Development
+To this point, I've demonstrated how to connect with a REPL and how to do interactive development with this REPL connection. However, we want to do Datomic since we're connecting to a Datomic instance. Let's work through a simple example of how to develop Datomic queries and lambdas interactively.
+
+The data and examples I am using are lifted from my talk [Datascript and Datomic: Data Modeling for Heroes](https://youtu.be/tV4pHW_WOrY). You may want to watch it to learn a little more about data modeling in these two awesome DBs.
+
+I've put all schemas, data, and queries in the `replion.spiderman-db` ns. Queries and data center around Peter Parker, his family and social relationships, and his evolving status as he gains his powers.
+
+We're going to create a lambda in the ns `replion.spiderman-lambdas`. This lambda should, for a given date, tell us the status of Peter Parker. By running a previous query, we know that his status transitions from :kid (on 2000-01-01) to :bitten (on 2001-01-01) to :spider-man (on 2001-01-05). Dates are made up. When the lambda is run we expect to get the correct status for the date.
+
+Rather than understand the valid arguments, input, output, etc. for a lambda we are just going to start with a non-broken function that looks like this:
+
+``` 
+(defn parker-status
+  [{:keys [date]}]
+  (let [db (d/db (core/connection))]
+    (spiderman/parker-status-query db)))
+```
+
+Note that the date is not used so the query will always return the latest status of Peter Parker. Also, the return type (a Clojure set) is almost certainly incompatible with lambda.
+
+Let's try it out by locating the lambda name in the AWS Lambda console and invoking it:
+
+`aws lambda invoke --function-name repl-ion-Compute-YOURGROUPNAME-parker-status  --payload '' /dev/stdout`
+
+This returns a nasty error:
+``` 
+{"errorMessage":"Unable to resolve 'replion.lambdas/parker-status'","errorType":"datomic.ion.lambda.handler.exceptions.Incorrect","stackTrace":["datomic.ion.lambda.handler$throw_anomaly.invokeStatic(handler.clj:24)","datomic.ion.lambda.handler$throw_anomaly.invoke(handler.clj:20)","datomic.ion.lambda.handler.Handler.on_anomaly(handler.clj:171)","datomic.ion.lambda.handler.Handler.handle_request(handler.clj:196)","datomic.ion.lambda.handler$fn__3841$G__3766__3846.invoke(handler.clj:67)","datomic.ion.lambda.handler$fn__3841$G__3765__3852.invoke(handler.clj:67)","clojure.lang.Var.invoke(Var.java:399)","datomic.ion.lambda.handler.Thunk.handleRequest(Thunk.java:35)"]}{
+    "StatusCode": 200,
+    "FunctionError": "Unhandled",
+    "ExecutedVersion": "$LATEST"
+}
+```
+
+Normally you would now guess what you did wrong. Was it the input, the output, something else? Once you have an idea as to the problem you re-push and re-deploy, rinse and repeat, until you figured it all out.
+
+We're going to debug it interactively.
+
+Step 1: Understanding the input.
+We're going to change our invocation to print the date and then we're going to invoke that function.
+
+Here's the code (Reload the `replion.spiderman-lambdas` if following along):
+``` 
+(defn parker-status
+  [{:keys [date]}]
+  (format "{\"date\":%s}" date)
+  #_
+  (let [db (d/db (core/connection))]
+    (spiderman/parker-status-query db)))
+```
+
+Here's the invocation:
+`aws lambda invoke --function-name repl-ion-Compute-YOURGROUPNAME-parker-status  --payload '2000-01-01' /dev/stdout`
+
+Result:
+``` 
+An error occurred (InvalidRequestContentException) when calling the Invoke operation: Could not parse request body into json: Unexpected character ('-' (code 45)): Expected space separating root-level values
+ at [Source: (byte[])"2000-01-01"; line: 1, column: 6]
+```
+
+Silly me! My payload needs to be JSON. Fortunately, I just saved myself a bunch of time with my hot-loaded `parker-status` function so I'll try again.
+`aws lambda invoke --function-name repl-ion-Compute-YOURGROUPNAME-parker-status  --payload '{"date":2000-01-01}' /dev/stdout`
+
 ## TODOs
 This is a work in progress, but is very powerful already. Some additional things I would like to do or see done:
 

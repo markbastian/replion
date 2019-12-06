@@ -2,6 +2,6 @@
            {:fn replion.lambdas/hello
             :description "Hello world. This is a simple lambda that does nothing but return hello."}
            :parker-status
-           {:fn replion.lambdas/parker-status
+           {:fn replion.spiderman-lambdas/parker-status
             :description "Return the status of Peter Parker at a given point in time."}}
  :app-name "repl-ion"}
