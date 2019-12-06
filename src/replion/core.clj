@@ -1,6 +1,7 @@
 (ns replion.core
   (:require [datomic.client.api :as d]
-            [nrepl.server :refer [start-server]]))
+            [nrepl.server :refer [start-server]]
+            [replion.spiderman-db :as spiderman]))
 
 (defonce server (start-server :bind "0.0.0.0" :port 3001))
 
@@ -14,3 +15,13 @@
 
 (def client
   (memoize (fn [] (d/client config))))
+
+(defn setup [client]
+  (if (not-any? #{"parker"} (d/list-databases client {}))
+    (let [_ (d/create-database client {:db-name "parker"})
+          conn (spiderman/transact-all (d/connect client {:db-name "parker"}))]
+      conn)
+    (d/connect client {:db-name "parker"})))
+
+(defn connection []
+  (setup (client)))

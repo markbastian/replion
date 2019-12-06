@@ -30,7 +30,7 @@ Prior to any of the following steps, set up a Datomic Solo instance _exactly_ as
 ![Correctly Configured Rules](public/resources/rules.png "REPL Rules")
 
 ### Code Modifications
-You now need to modify your code to host an nrepl server.
+You now need to modify your code to host an nrepl server. If you are using this project as your template the changes are already in place.
  1. Add `nrepl {:mvn/version "0.6.0"}` to the :deps map in your deps.edn file.
  1. In _a namespace that will be loaded by your Datomic system_, make the following changes:
     1. Add `[nrepl.server :refer [start-server]]` to your requires.
