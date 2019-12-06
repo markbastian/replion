@@ -323,7 +323,63 @@ Huzzah!!!
 This concludes our example of interactive Datomic lambda development. I was able to stub out, debug, and develop a lambda interactively. At every new attempt to understand what's going on I was able to do immediate tries and get immediate feedback as opposed to minutes-long deployments at every single code change otherwise. The only slow loop deploys were when I seeded a feature (e.g. create a new lambda), added a library (changed the deps.edn file), or decided to slow deploy a completed feature. Everything else was immediate and interactive.
 
 ## Interactive REST API Development
-For our final example I'll show.
+For our final example I'll show how to create an amazing web API interactively. This example will start with simple "OK" handler via a lambda and the API gateway and eventually create a full on Swagger API with multiple endpoints all using a _single_ lambda.
+
+First, there's a little prework:
+
+Add this entry to your `ion-config.edn` file in the `:lambdas` section:
+```
+:handler
+{:fn          replion.web/handler-proxy
+ :description "Our single web handler"}
+```
+
+Examine the `replion.web/handler-proxy` function and the `replion.web/handler` function that it proxies, shown here: 
+
+``` 
+(ns replion.web
+  (:require [datomic.ion.lambda.api-gateway :as apigw]))
+
+(defn handler
+  [request]
+  {:status 200
+   :headers {}
+   :body "OK"})
+
+(def handler-proxy
+  (apigw/ionize handler))
+```
+
+This ns and the changes to ion-config.edn parallel what is described [here](https://docs.datomic.com/cloud/ions/ions-tutorial.html#lambda-proxy) in the Datomic ions tutorial.
+
+Once you've got your :hander lambda and the two functions defined above in place (already done if using this project), do a slow deploy. Once the deploy is complete you should be able to see your lambda in the AWS Lambda console. It will look something like `repl-ion-Compute-YOURGROUPNAME-handler`.
+
+Now, follow the directions_exactly_ as described in the three sections starting [here](https://docs.datomic.com/cloud/ions/ions-tutorial.html#orga5c4531) to create, connect, and deploy your API. Note that with the release of the new HTTP API things may change. For now, I'm going to choose the legacy REST API option and follow all of the directions as described in the Datomic ions tutorial. One variant I do on the defaults is that I enable CORS.
+
+As described in the tuturials, you should now be able to go to your invoke URL, something like `https://abc123uandme.execute-api.us-east-1.amazonaws.com/dev`. If you paste this into a browser window, you'll get something like `{"message":"Missing Authentication Token"}`. Append _anything_ onto the end of this path to route to your endpoint. For example, `https://abc123uandme.execute-api.us-east-1.amazonaws.com/dev/handler` or `https://abc123uandme.execute-api.us-east-1.amazonaws.com/dev/datomic`. You should see "OK". Good time!
+
+Now for our first interactive change. Let's understand how requests work for this API. Having to decode this given the existing non-existend documentation is awful, awful, awful and will take just about forever. Here's what we're going to do to get instant information - change your handler to what is shown below and reload the ns:
+
+```
+(defn handler
+  [request]
+  {:status  200
+   :headers {}
+   :body    (with-out-str (pp/pprint request))})
+```
+
+Finally, let's append some query params onto our request for maximum information learning. Here's your new request. Just paste this into a browser - no need for curl.
+
+`https://abc123uandme.execute-api.us-east-1.amazonaws.com/dev/handler?repl=rocks`
+
+Holy friggin crap! You now know everything there is to know about decoding your requests! Inspect that output to learn a few things:
+
+ * There's a `:query-string "repl=rocks"` entry that we can use.
+ * There's a `:uri "/handler"` entry with the path.
+ * There's a `:datomic.ion.edn.api-gateway/data` key that has all those params, only a little more Clojure-y.
+ 
+Now it is time to make a brief aside to have a little discussion and make a few observations regarding the awesomeness that is now at our fingertips.
+ * Note that 
 
 ## TODOs
 This is a work in progress, but is very powerful already. Some additional things I would like to do or see done:
