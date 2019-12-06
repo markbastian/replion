@@ -159,41 +159,140 @@ Let's try it out by locating the lambda name in the AWS Lambda console and invok
 
 This returns a nasty error:
 ``` 
-{"errorMessage":"Unable to resolve 'replion.lambdas/parker-status'","errorType":"datomic.ion.lambda.handler.exceptions.Incorrect","stackTrace":["datomic.ion.lambda.handler$throw_anomaly.invokeStatic(handler.clj:24)","datomic.ion.lambda.handler$throw_anomaly.invoke(handler.clj:20)","datomic.ion.lambda.handler.Handler.on_anomaly(handler.clj:171)","datomic.ion.lambda.handler.Handler.handle_request(handler.clj:196)","datomic.ion.lambda.handler$fn__3841$G__3766__3846.invoke(handler.clj:67)","datomic.ion.lambda.handler$fn__3841$G__3765__3852.invoke(handler.clj:67)","clojure.lang.Var.invoke(Var.java:399)","datomic.ion.lambda.handler.Thunk.handleRequest(Thunk.java:35)"]}{
+{"errorMessage":"No implementation of method: :->bbuf of protocol: #'datomic.ion.lambda.dispatcher/ToBbuf found for class: java.util.HashSet","errorType":"datomic.ion.lambda.handler.exceptions.Incorrect","stackTrace":["datomic.ion.lambda.handler$throw_anomaly.invokeStatic(handler.clj:24)","datomic.ion.lambda.handler$throw_anomaly.invoke(handler.clj:20)","datomic.ion.lambda.handler.Handler.on_anomaly(handler.clj:171)","datomic.ion.lambda.handler.Handler.handle_request(handler.clj:196)","datomic.ion.lambda.handler$fn__3841$G__3766__3846.invoke(handler.clj:67)","datomic.ion.lambda.handler$fn__3841$G__3765__3852.invoke(handler.clj:67)","clojure.lang.Var.invoke(Var.java:399)","datomic.ion.lambda.handler.Thunk.handleRequest(Thunk.java:35)"]}{
+    "StatusCode": 200,
+    "FunctionError": "Unhandled",
+    "ExecutedVersion": "$LATEST"
+```
+
+Normally you would now guess what you did wrong. Was it the input, the output, something else? Once you have an idea as to the problem you re-push and re-deploy, rinse and repeat, until you figured it all out.
+
+We're going to debug it interactively. The message said something about not understanding a HashSet. This tips me off that my return type is wrong. Recalling that I need to return a JSON string, I first need to identify what I am actually returning. At the REPL I am going to eval the inner form of my lambda code. This gives:
+
+``` 
+(let [db (d/db (core/connection))]
+    (spiderman/parker-status-query db))
+=> #{[:spider-man #inst"2001-01-05T00:00:00.000-00:00"]}
+```
+
+Time to modify and reload our code as follows:
+
+``` 
+(defn parker-status
+  [{:keys [date]}]
+  (let [db (d/db (core/connection))
+        [status as-of-date] (first (spiderman/parker-status-query db))]
+    (format "{\"%s\": \"%s\"}" (name status) as-of-date)))
+```
+
+Now, when I call the lambda (same aws lambda command as before) I get:
+``` 
+{"spider-man": "Fri Jan 05 00:00:00 UTC 2001"}{
+    "StatusCode": 200,
+    "ExecutedVersion": "$LATEST"
+}
+```
+
+Awesome! I still need to incorporate my input date, though.
+
+Let's try modifying and hot-reloading our code like so (Reminder - under the old regime this would take minutes):
+
+``` 
+(defn parker-status
+  [{:keys [date]}]
+  (let [db (d/db (core/connection))
+        as-of-db (d/as-of db date)
+        [status as-of-date] (first (spiderman/parker-status-query as-of-db))]
+    (format
+      "{\"%s\": \"%s\"}"
+      (name status)
+      as-of-date)))
+```
+
+We'll now try it like so:
+
+`aws lambda invoke --function-name repl-ion-Compute-YOURGROUPNAME-parker-status  --payload '"2010-01-01"' /dev/stdout`
+
+Ouch! We get this error:
+
+```
+{"errorMessage":"datomic.ion.lambda.handler.exceptions.Incorrect","errorType":"datomic.ion.lambda.handler.exceptions.Incorrect","stackTrace":["datomic.ion.lambda.handler$throw_anomaly.invokeStatic(handler.clj:24)","datomic.ion.lambda.handler$throw_anomaly.invoke(handler.clj:20)","datomic.ion.lambda.handler.Handler.on_anomaly(handler.clj:171)","datomic.ion.lambda.handler.Handler.handle_request(handler.clj:196)","datomic.ion.lambda.handler$fn__3841$G__3766__3846.invoke(handler.clj:67)","datomic.ion.lambda.handler$fn__3841$G__3765__3852.invoke(handler.clj:67)","clojure.lang.Var.invoke(Var.java:399)","datomic.ion.lambda.handler.Thunk.handleRequest(Thunk.java:35)"]}{
     "StatusCode": 200,
     "FunctionError": "Unhandled",
     "ExecutedVersion": "$LATEST"
 }
 ```
 
-Normally you would now guess what you did wrong. Was it the input, the output, something else? Once you have an idea as to the problem you re-push and re-deploy, rinse and repeat, until you figured it all out.
+Well, I already fixed my output so maybe I am not handling my input right. Let's set it as a passthrough with some hot-reload magic:
 
-We're going to debug it interactively.
-
-Step 1: Understanding the input.
-We're going to change our invocation to print the date and then we're going to invoke that function.
-
-Here's the code (Reload the `replion.spiderman-lambdas` if following along):
 ``` 
 (defn parker-status
-  [{:keys [date]}]
-  (format "{\"date\":%s}" date)
-  #_
-  (let [db (d/db (core/connection))]
-    (spiderman/parker-status-query db)))
+  [args]
+  (let [db (d/db (core/connection))
+        ;as-of-db (d/as-of db date)
+        [status as-of-date] (first (spiderman/parker-status-query db))]
+    (format
+      "{\"args\":\"%s\",\n\"%s\": \"%s\"}"
+      (str args)
+      (name status)
+      as-of-date)))
 ```
 
-Here's the invocation:
-`aws lambda invoke --function-name repl-ion-Compute-YOURGROUPNAME-parker-status  --payload '2000-01-01' /dev/stdout`
-
-Result:
+This gives this useful output:
 ``` 
-An error occurred (InvalidRequestContentException) when calling the Invoke operation: Could not parse request body into json: Unexpected character ('-' (code 45)): Expected space separating root-level values
- at [Source: (byte[])"2000-01-01"; line: 1, column: 6]
+{"args":"{:context
+ {:clientContext nil,
+  :identity {:identityId "", :identityPoolId ""},
+  :functionVersion "$LATEST",
+  :memoryLimitInMB 256,
+  :invokedFunctionArn
+  "arn:aws:lambda:us-east-1:XXXXXXXXXXX:function:repl-ion-Compute-YOURGROUPNAME-parker-status",
+  :logGroupName
+  "/aws/lambda/repl-ion-Compute-YOURGROUPNAME-parker-status",
+  :logStreamName
+  "2019/12/06/[$LATEST]...",
+  :awsRequestId "...",
+  :functionName "repl-ion-Compute-YOURGROUPNAME-parker-status",
+  :remainingTimeInMillis 59999},
+ :input "\"2010-01-01\""}
+",
+"spider-man": "Fri Jan 05 00:00:00 UTC 2001"}
 ```
 
-Silly me! My payload needs to be JSON. Fortunately, I just saved myself a bunch of time with my hot-loaded `parker-status` function so I'll try again.
-`aws lambda invoke --function-name repl-ion-Compute-YOURGROUPNAME-parker-status  --payload '{"date":2000-01-01}' /dev/stdout`
+I could go surfing through the logs since that is reported in the output, but what's even better is I can see my arguments. It's not a date key (why would it be?), it's an input key. Furthermore, it's double escaped since it is a JSON string so I need to take this into account. Super useful.
+
+Now let's try this:
+``` 
+(defn parker-status
+  [{:keys [input]}]
+  (let [date (.parse (SimpleDateFormat. "yyyy-MM-dd") (cs/replace input #"\"" ""))
+        db (d/db (core/connection))
+        as-of-db (d/as-of db date)
+        [status as-of-date] (first (spiderman/parker-status-query as-of-db))]
+    (format
+      "{\"%s\": \"%s\"}"
+      (name status)
+      as-of-date)))
+```
+
+Finally, let's try a few invocations:
+
+`aws lambda invoke --function-name repl-ion-Compute-YOURGROUPNAME-parker-status  --payload '"2000-01-01"' /dev/stdout`
+
+`aws lambda invoke --function-name repl-ion-Compute-YOURGROUPNAME-parker-status  --payload '"2001-01-01"' /dev/stdout`
+
+`aws lambda invoke --function-name repl-ion-Compute-YOURGROUPNAME-parker-status  --payload '"2006-01-01"' /dev/stdout`
+
+These return `{"kid": "Sat Jan 01 00:00:00 UTC 2000"}`, `{"bitten": "Mon Jan 01 00:00:00 UTC 2001"}`, and `{"spider-man": "Fri Jan 05 00:00:00 UTC 2001"}`, respectively. Awesome, it works!
+
+At this point everything looks right, so it might a be a good time for a "slow deploy."
+
+This concludes our example of interactive Datomic lambda development. I was able to stub out, debug, and develop a lambda interactively. At every new attempt to understand what's going on I was able to do immediate tries and get immediate feedback as opposed to minutes-long deployments at every single code change otherwise.
+
+One thing I did not do was leverage the good JSON apis out there for parsing and formatting input and output. This would require changing my deps.edn file to include a JSON library such as Clojure core json or Cheshire and then doing a slow deploy. In reality I would definitely do this and I will be doing it in my next example.
+
+## Interactive REST API Development
+For our final example I'll show.
 
 ## TODOs
 This is a work in progress, but is very powerful already. Some additional things I would like to do or see done:
