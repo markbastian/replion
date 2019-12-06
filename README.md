@@ -285,10 +285,12 @@ Finally, let's try a few invocations:
 
 These return `{"kid": "Sat Jan 01 00:00:00 UTC 2000"}`, `{"bitten": "Mon Jan 01 00:00:00 UTC 2001"}`, and `{"spider-man": "Fri Jan 05 00:00:00 UTC 2001"}`, respectively. Awesome, it works!
 
-At this point everything looks right, so it might a be a good time for a "slow deploy."
+At this point everything looks right, so it might a be a good time for a "slow deploy." However, since I am doing this, it is also an opportune time to add some dependencies to make working with json a little less painful. I'll now add `cheshire {:mvn/version "5.9.0"}` to my deps.edn files :deps map and do a slow deploy. Note that I add the dependency (1 in this case, but it could be any number) _before_ requiring or using any of them in my project. The reason for this is that each slow deploy should have minimal deltas so that when things go wrong it is easier to diagnose the issue.
 
+;Make this final
 This concludes our example of interactive Datomic lambda development. I was able to stub out, debug, and develop a lambda interactively. At every new attempt to understand what's going on I was able to do immediate tries and get immediate feedback as opposed to minutes-long deployments at every single code change otherwise.
 
+;Remove
 One thing I did not do was leverage the good JSON apis out there for parsing and formatting input and output. This would require changing my deps.edn file to include a JSON library such as Clojure core json or Cheshire and then doing a slow deploy. In reality I would definitely do this and I will be doing it in my next example.
 
 ## Interactive REST API Development
