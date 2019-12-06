@@ -5,6 +5,6 @@
             {:fn          replion.spiderman-lambdas/parker-status
              :description "Return the status of Peter Parker at a given point in time."}
             :handler
-            {:fn          replion.web/handler
+            {:fn          replion.web/handler-proxy
              :description "Our single web handler"}}
  :app-name "repl-ion"}
