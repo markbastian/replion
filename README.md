@@ -338,6 +338,9 @@ These are a few ideas that the Datomic Team might want to consider for future de
  * Add a startup/init ns or hook along the lines of integrant init. This would enable control of stateful items such as connections as well as provide a more solid mount point for starting the nrepl server and so on.
  * If the above ideas are good ones, consider adding port fowarding over the bastion as a default option. Perhaps setting the port as a configuration option in the CloudFormation template. This would also necessitate ensuring the concept works for other topologies as well.
 
+## Misc
+ * I find it useful to capture all the commands that I can't remember as local executable scripts. For example, I've commited my _push_ file. It has the clojure push command and I've a+x'd it. Not included are one-liner files for executing each of the lambda's I've discussed above such as the parker-status invocation. 
+
 ## License
 
 Copyright © 2019 Mark Bastian
