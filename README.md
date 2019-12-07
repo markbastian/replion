@@ -379,7 +379,38 @@ Holy friggin crap! You now know everything there is to know about decoding your 
  * There's a `:datomic.ion.edn.api-gateway/data` key that has all those params, only a little more Clojure-y.
  
 Now it is time to make a brief aside to have a little discussion and make a few observations regarding the awesomeness that is now at our fingertips.
- * Note that 
+ * It is common in the serverless/FaaS/lambda world to create a single lambda for each endpoint and then wire the lambda in to AWS API Gateway. This uses Gateway for routing and isolates the logic of each endpoint at the lambda level. You can then use API Gateway to build Swagger/OpenAPI documentation and so on.
+ * A typical Clojure web app, on the other hand, is a single handler function that takes a request and returns a response. This handler can delegate to a routing library, such as [reitit](https://metosin.github.io/reitit/), to route requests and then wire in the individual handler logic at the edges of the router. Libraries like Swagger can be use to create nice, documented APIs.
+ * Both of the above are acceptable strategies to separate the concerns of routing and logic.
+ * What isn't immediately obvious, however, is that there is no reason you can't use a single handler as in point 2 above that is dispatched by a single lambda. This would effectively replace your immutant, webkit, jetty, etc. server with a lambda. This greatly minimizes the complexity of dealing with API Gateway and all of the associated moving parts to create a web app. Furthermore, since you are dispatching a single lambda it will likely be called more and remain hot. Autoscaling can be used to handle as much load as possible. Finally, this single handler is just a function that takes a request and returns a response. Once debugged, it need not be hosted as a Datomic ion (Despite being extremely convenient). It could also moved to any other compatible "driver" mechanism (Plain lambda, PaaS, etc.).
+ 
+So, given the above, we are going to extend our single handler function above into a full-fledged web backend with routing and a great UI. Let's do it!
+
+The first thing we should do is a single slow deploy to add in all of the libraries we want. So, we're going to import a few with our deps file and do a slow deploy:
+ * `metosin/reitit             {:mvn/version "0.3.10"}`
+ * `metosin/ring-http-response {:mvn/version "0.9.1"}`
+ * `hiccup                     {:mvn/version "1.0.5"}`
+
+This deploy succeeded, but now we are about to learn the value of separating our deploys from our code implementations. After this deploy I added, one at a time, the following requires to my `replion.web` ns, each time reloading the ns as the line is added:
+
+ * `[reitit.ring :as ring]`
+ * `[reitit.swagger :as swagger]`
+ * `[reitit.swagger-ui :as swagger-ui]`
+ 
+When I reload the last ns, something bad happens:
+
+``` 
+Loading src/replion/web.clj... 
+Syntax error (ClassNotFoundException) compiling new at (core.clj:79:38).
+com.fasterxml.jackson.core.exc.InputCoercionException
+```
+
+Had I added those requires and an initial implementation before doing my slow deploy the deploy would have failed and I would have pulled my hair out for hours trying sifting through logs trying to figure out what happend. Instead, I have some useful info and I also recall that when I deployed I had this dependency conflict: `com.fasterxml.jackson.core/jackson-core #:mvn{:version "2.9.8"}`. Googling [com.fasterxml.jackson.core.exc.InputCoercionException](http://fasterxml.github.io/jackson-core/javadoc/2.10/com/fasterxml/jackson/core/exc/InputCoercionException.html) shows that this class was added in version 2.10. I need to downgrade my jackson version. This demonstrates the value of the REPL. This is a local vs. cloud environment difference that was most easily debugged in the cloud on the system with the problem. The solution is to add the older version of jackson to my deps:
+
+ * `com.fasterxml.jackson.core/jackson-core     {:mvn/version "2.9.8"}`
+ * `com.fasterxml.jackson.core/jackson-databind {:mvn/version "2.9.8"}`
+
+I now comment out the offending import,`[reitit.swagger-ui :as swagger-ui]`, and do another slow deploy.
 
 ## TODOs
 This is a work in progress, but is very powerful already. Some additional things I would like to do or see done:
