@@ -358,7 +358,7 @@ Now, follow the directions _exactly_ as described in the three sections starting
 
 As described in the tuturials, you should now be able to go to your invoke URL, something like `https://abc123uandme.execute-api.us-east-1.amazonaws.com/dev`. If you paste this into a browser window, you'll get something like `{"message":"Missing Authentication Token"}`. Append _anything_ onto the end of this path to route to your endpoint. For example, `https://abc123uandme.execute-api.us-east-1.amazonaws.com/dev/handler` or `https://abc123uandme.execute-api.us-east-1.amazonaws.com/dev/datomic`. You should see "OK". Good times!
 
-Now for our first interactive change. Let's understand how requests work for this API. Having to decode this given the existing non-existend documentation is awful, awful, awful and will take just about forever. Here's what we're going to do to get instant information - change your handler to what is shown below and reload the ns:
+Now for our first interactive change. Let's understand how requests work for this API. Having to decode this given the nearly non-existent documentation is awful, awful, awful and will take just about forever. Here's what we're going to do to get instant information - change your handler to what is shown below and reload the ns:
 
 ```
 (defn handler
