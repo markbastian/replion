@@ -10,7 +10,7 @@ This is the goal of replion, to give you step-by-step instructions and examples 
 
 Note that for the entirety of this project I will use my stack/application name, "replion." You will use your stack/application name instead.
 
-These instructions are for connecting a REPL to a solo instance of Datomic Cloud. Since I don't have the budget to spin up a prod instance on my own time to figure this out I'll leave prod instance configuration as an exercise for the reader unless someone wants to provide a prod system to me.
+These instructions are for connecting a REPL to a solo instance of Datomic Cloud. As time and resources become available, I may provide instructions for a production instance in the future. Alternatively, REPL-driven deployment could be done in a solo instance and then pushed to a production instance as desired.
 
 ## Recommended Prereading
 While not required, I strongly recommend understanding the basics of Datomic Cloud and Datomic Ions by going through the [Datomic Tutorial](https://docs.datomic.com/cloud/tutorial/client.html) and the [Datomic Ions Tutorial](https://docs.datomic.com/cloud/ions/ions-tutorial.html), including cloning, running, and carefully inspecting the [ion starter repo](https://github.com/datomic/ion-starter).
