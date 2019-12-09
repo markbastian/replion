@@ -372,7 +372,7 @@ Finally, let's append some query params onto our request for maximum information
 
 `https://abc123uandme.execute-api.us-east-1.amazonaws.com/dev/handler?repl=rocks`
 
-Holy friggin crap! You now know everything there is to know about decoding your requests! Inspect that output to learn a few things:
+Holy cow! You now know everything there is to know about decoding your requests! Inspect that output to learn a few things:
 
  * There's a `:query-string "repl=rocks"` entry that we can use.
  * There's a `:uri "/handler"` entry with the path.
