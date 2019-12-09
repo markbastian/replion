@@ -6,7 +6,7 @@ Datomic and Datomic Ions are a powerful database and platform for creating cloud
 
 What if, instead, you could deploy a simple, working system to the cloud and then securely REPL in to your system, develop as if you were on your local system, and then complete the push and deploy cycle after you've figured out all of the painful aspects of your initial product? 
 
-This is the goal of replion, to give you step-by-step instructions and examples of how to do configure your Datomic system for cloud-based REPL development.
+This is the goal of replion, to give you step-by-step instructions and examples of how to configure your Datomic system for cloud-based REPL development.
 
 Note that for the entirety of this project I will use my stack/application name, "replion." You will use your stack/application name instead.
 
