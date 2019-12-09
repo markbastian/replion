@@ -12,12 +12,7 @@
              metosin/ring-http-response                  {:mvn/version "0.9.1"}
              hiccup                                      {:mvn/version "1.0.5"}
              com.fasterxml.jackson.core/jackson-core     {:mvn/version "2.9.8"}
-             com.fasterxml.jackson.core/jackson-databind {:mvn/version "2.9.8"}
-             ;[ring/ring-defaults "0.3.2"]
-             ;[ring/ring-json "0.5.0"]
-             ;[com.fasterxml.jackson.core/jackson-core "2.10.1"]
-             ;[com.fasterxml.jackson.core/jackson-databind "2.10.1"]
-             }
+             com.fasterxml.jackson.core/jackson-databind {:mvn/version "2.9.8"}}
  :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}
  :aliases   {:ion-dev {:deps      {com.datomic/ion-dev {:mvn/version "0.9.247"}}
                        :main-opts ["-m" "datomic.ion.dev"]}}}

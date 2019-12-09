@@ -412,10 +412,45 @@ Had I added those requires and an initial implementation before doing my slow de
 
 I now comment out the offending import,`[reitit.swagger-ui :as swagger-ui]`, and do another slow deploy.
 
+Now I can successfully add all of my requires. Time to make a better handler.
+
+With the power of reitit and some other useful nses from that project, I now create the following handler:
+
+```(def router
+  (ring/router
+    [["/api" {:swagger {:tags    ["basic api"]
+                        :summary "This is the api"}}
+      ["/time" {:get (fn [_] (ok {:time (str (Date.))}))}]
+      ["/memory" {:get (fn [_] (ok {:runtime-stats (runtime-data)}))}]]
+     ["" {:no-doc true
+          :swagger {:basePath "/dev"}}
+      ["/swagger.json" {:get (swagger/create-swagger-handler)}]
+      ["/api-docs*" {:get (swagger-ui/create-swagger-ui-handler {:url "/dev/swagger.json"})}]]]
+    {:data {:coercion   reitit.coercion.spec/coercion
+            :middleware [params/wrap-params
+                         middleware/wrap-format]}}))
+
+(def handler
+  (ring/ring-handler
+    router
+    (constantly (not-found "Not found"))))
+```
+
+This is a pretty simple example that doesn't do anything to exciting, but it does demonstrate some important concepts:
+ * I am able to make a single handler using only one HTTP API gateway lambda. No need to mess with that any further.
+ * I can use reitit routing to all the logic I need for my entire API.
+ * I can create a nice Swagger UI with almost no effort. No need to mess with the AWS stuff.
+ 
+Again, this was all done interactively.
+
+Check out `replion.web` for the full example, including the progressive steps performed along the way.
+
+## Conclusion
+I hope that this project demonstrates the value of a REPL-enabled workflow with Datomic cloud. Once you know how to do it, it is pretty easy to connect a REPL and do all of your coding live on your Cloud instance. This saves a tremendous amount of time in figuring out all of the integration details. This gives you immediate access to develop your Datomic instance, lambdas, and REST APIs live and interactive.
+
 ## TODOs
 This is a work in progress, but is very powerful already. Some additional things I would like to do or see done:
 
- * Add web endpoint example.
  * Streamline the creation of the API gateway endpoints. If the one-lambda model were used then perhaps this would minimize the moving parts such that it would be feasible to just create one preconfigured endpoint per system automatically.
  * Get an example of this working on all deployment topologies.
 
