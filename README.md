@@ -354,7 +354,7 @@ This ns and the changes to ion-config.edn parallel what is described [here](http
 
 Once you've got your :hander lambda and the two functions defined above in place (already done if using this project), do a slow deploy. Once the deploy is complete you should be able to see your lambda in the AWS Lambda console. It will look something like `repl-ion-Compute-YOURGROUPNAME-handler`.
 
-Now, follow the directions _exactly_ as described in the three sections starting [here](https://docs.datomic.com/cloud/ions/ions-tutorial.html#orga5c4531) to create, connect, and deploy your API. Note that with the release of the new HTTP API things may change. For now, I'm going to choose the legacy REST API option and follow all of the directions as described in the Datomic ions tutorial. One variant I do on the defaults is that I enable CORS.
+Now, follow the directions _exactly_ as described in the sections starting with "API Gateway Web Services" in the [Ions Tutorial](https://docs.datomic.com/cloud/ions/ions-tutorial.html) to create, connect, and deploy your API. Note that with the release of the new HTTP API things may change. For now, I'm going to choose the legacy REST API option and follow all of the directions as described in the Datomic ions tutorial. One variant I do on the defaults is that I enable CORS.
 
 As described in the tuturials, you should now be able to go to your invoke URL, something like `https://abc123uandme.execute-api.us-east-1.amazonaws.com/dev`. If you paste this into a browser window, you'll get something like `{"message":"Missing Authentication Token"}`. Append _anything_ onto the end of this path to route to your endpoint. For example, `https://abc123uandme.execute-api.us-east-1.amazonaws.com/dev/handler` or `https://abc123uandme.execute-api.us-east-1.amazonaws.com/dev/datomic`. You should see "OK". Good times!
 
@@ -416,7 +416,8 @@ Now I can successfully add all of my requires. Time to make a better handler.
 
 With the power of reitit and some other useful nses from that project, I now create the following handler:
 
-```(def router
+```
+(def router
   (ring/router
     [["/api" {:swagger {:tags    ["basic api"]
                         :summary "This is the api"}}
